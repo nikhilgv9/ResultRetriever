@@ -5,11 +5,15 @@
 package http;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
@@ -20,40 +24,71 @@ import ui.MainFrame1;
 
 /**
  *
- * @author Nikhil
+ * @author 
  */
 public class HttpHandler {
     String url;
     String response;
+    String textip="110.77.227.246";
+    InetAddress proxyHost;
+    int proxyPort=3128;
+
     
     public HttpHandler(String url){
-        this.url=url;
+        proxyHost=null;
+        try {
+            this.url=url;
+            proxyHost=InetAddress.getByName(textip);
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(HttpHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public String getResponse(){
         String res=null;
-        try {
-            Socket connection = new Socket(MainFrame1.RESULT_DOMAIN, MainFrame1.PORT);
-            OutputStream con_out = connection.getOutputStream();
-            InputStream con_in = connection.getInputStream();
-            PrintWriter out_writer = new PrintWriter(con_out, false);
-            out_writer.print("GET "+url+" HTTP/1.1\r\n");
-            out_writer.print("Host: nikhil-pc\r\n");
-            out_writer.print("\r\n");
-            out_writer.flush();
+        boolean retry=true;
+        int retrys=0;
+        while(retry)
+        {
+            try {
 
-            InputStreamReader isr_reader = new InputStreamReader(con_in);
-            char[] streamBuf = new char[8192];
-            int amountRead;
-            StringBuilder receivedData = new StringBuilder();
-            while((amountRead = isr_reader.read(streamBuf)) > 0){
-                    receivedData.append(streamBuf, 0, amountRead);
+//                InetSocketAddress address = new InetSocketAddress(proxyHost, proxyPort);
+//                Proxy proxy = new Proxy(Proxy.Type.SOCKS, address);
+//                Socket connection = new Socket(proxy);
+//                InetSocketAddress inet = new InetSocketAddress(MainFrame1.RESULT_DOMAIN, MainFrame1.PORT);
+//                connection.connect(inet);
+                Socket connection = new Socket(MainFrame1.RESULT_DOMAIN, MainFrame1.PORT);
+                
+                OutputStream con_out = connection.getOutputStream();
+                InputStream con_in = connection.getInputStream();
+                PrintWriter out_writer = new PrintWriter(con_out, false);
+                out_writer.print("GET "+url+" HTTP/1.1\r\n");
+                out_writer.print("Host: nikhil-pc\r\n");
+                out_writer.print("\r\n");
+                out_writer.flush();
+
+                InputStreamReader isr_reader = new InputStreamReader(con_in);
+                char[] streamBuf = new char[8192];
+                int amountRead;
+                StringBuilder receivedData = new StringBuilder();
+                while((amountRead = isr_reader.read(streamBuf)) > 0){
+                        receivedData.append(streamBuf, 0, amountRead);
+                }
+                res=receivedData.toString();
+            } catch (UnknownHostException ex) {
+                Logger.getLogger(HttpHandler.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(HttpHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
-            res=receivedData.toString();
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(HttpHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(HttpHandler.class.getName()).log(Level.SEVERE, null, ex);
+            if(res==null && retrys<3){
+                retrys++;
+            }
+            else {
+                retry=false;
+            }
+        }
+        if(res==null){
+            //Code to write log file   
         }
         this.response=res;
         return res;
@@ -63,6 +98,12 @@ public class HttpHandler {
     public void saveResponseToFile(String fileName){
         FileOutputStream fstream=null;
         try {
+//            InetSocketAddress address = new InetSocketAddress(proxyHost, proxyPort);
+//            Proxy proxy = new Proxy(Proxy.Type.SOCKS, address);
+//            Socket connection = new Socket(proxy);
+//            InetSocketAddress inet = new InetSocketAddress(MainFrame1.RESULT_DOMAIN, MainFrame1.PORT);
+//            connection.connect(inet);
+            
             Socket connection = new Socket(MainFrame1.RESULT_DOMAIN, MainFrame1.PORT);
             OutputStream con_out = connection.getOutputStream();
             InputStream con_in = connection.getInputStream();

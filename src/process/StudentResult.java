@@ -6,6 +6,8 @@ package process;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *
@@ -19,9 +21,19 @@ public class StudentResult {
     String examName;
     List<ExamResult> subjectResults=new ArrayList<ExamResult>();
     String averageGradePoint;
+    Set<String> allSubjects=new TreeSet<String>();
     
     public void addSubjectResult(String subCode,String subName,String credit,String grade,String date,String type){
+        allSubjects.add(subCode);
         subjectResults.add(new ExamResult(subCode,subName,credit,grade,date,type));
+    }
+
+    public Set<String> getAllSubjects() {
+        return allSubjects;
+    }
+
+    public void setAllSubjects(Set<String> allSubjects) {
+        this.allSubjects = allSubjects;
     }
 
     public String getStudentName() {

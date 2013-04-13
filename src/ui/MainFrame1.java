@@ -1,7 +1,10 @@
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
+ * Test with  http://uoc.ac.in/exam/btech/creditbt1.php?id=2247
+* VEAKECS001 to VEAKECS066
  */
+
 package ui;
 
 import http.HttpHandler;
@@ -12,23 +15,27 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
+import process.GroupResult;
 import process.PdfProcessor;
 import process.SpreadSheetCreator;
 import process.StudentResult;
 
 /**
  *
- * @author Nikhil
+ * @author 
  */
 public class MainFrame1 extends javax.swing.JFrame {
     
-    public static List<String> UNDER_SESION_GRADES=new ArrayList<String>(Arrays.asList("U"));
+    public static String COLLEGE_NAME="College Name Here.....";
+    
+    public static List<String> UNDER_SESION_GRADES=new ArrayList<String>(Arrays.asList("U","U(Absent)"));
     public static int PORT=80;
     public static String RESULT_DOMAIN="uoc.ac.in";
     public static String RESULT_URL="http://uoc.ac.in/exam/resultonline.php";
@@ -145,31 +152,74 @@ public class MainFrame1 extends javax.swing.JFrame {
    }
    
    public void fetchresults(String url,String regNoFieldName){
-       List<String> studentRegNos=prepareListofRegs();
-       List<StudentResult> results=new ArrayList<StudentResult>();
-       if(studentRegNos==null){
-           JOptionPane.showMessageDialog(this,MSG_INV_REGNO_N_NO);
-           return;
-       }
-       String prefixUrl;
-       if(url.contains("?")){
-            prefixUrl = url+"&"+regNoFieldName+"=";
-       }else{
-           prefixUrl = url+"?"+regNoFieldName+"=";
-       }
-       for(String i:studentRegNos){
-           String finalUrl=prefixUrl+i;
-           System.out.println(finalUrl);
-           HttpHandler h=new HttpHandler(finalUrl);
-           h.saveResponseToFile(TEMP_PDF_FILE_NAME);
-           PdfProcessor p=new PdfProcessor(TEMP_PDF_FILE_NAME);
-           StudentResult r=p.getStudentResult();
-           results.add(r);
-           r.quickPrint();
-       }
-       SpreadSheetCreator sc=new SpreadSheetCreator(results);
-       sc.createXLS("results.xls");
-       System.out.println("Done!!!");
+        FileWriter fw = null;
+        try {
+            List<String> studentRegNos=prepareListofRegs();
+            GroupResult<StudentResult> results=new GroupResult<StudentResult>();
+            if(studentRegNos==null){
+                JOptionPane.showMessageDialog(this,MSG_INV_REGNO_N_NO);
+                return;
+            }
+            String prefixUrl;
+            if(url.contains("?")){
+                 prefixUrl = url+"&"+regNoFieldName+"=";
+            }else{
+                prefixUrl = url+"?"+regNoFieldName+"=";
+            }
+            fw = new FileWriter("log.txt", true);
+            fw.write("-----------------------------\r\n");
+            Date now=new Date();
+            fw.write("Log on: "+now.toString()+"\r\n");
+            for(String i:studentRegNos){
+                String finalUrl=prefixUrl+i;
+                System.out.println(finalUrl);
+                boolean retry=true;
+                int retrys=0;
+                
+                StudentResult r=null;
+                while(retry)
+                {
+                    r=null;
+                    HttpHandler h=new HttpHandler(finalUrl);
+                    h.saveResponseToFile(TEMP_PDF_FILE_NAME);
+                    PdfProcessor p=new PdfProcessor(TEMP_PDF_FILE_NAME);
+                    r=p.getStudentResult();
+                    if(r.getRegNo()==null && retrys<5){
+                        retrys++;
+                        System.out.println("Retrying.............");
+                    }
+                    else
+                    {
+                        retry=false;
+                    }
+                }
+                if(r.getRegNo()==null)
+                {
+                    //Code to write log
+                    fw.write("Failed to retrieve result for reg no "+i+"\r\n");
+
+                }
+                else
+                {
+                     results.add(r);
+                     r.quickPrint();
+                }
+             }
+            ExamComboItem selectedItem=(ExamComboItem) examCombo.getSelectedItem();
+            String examName=selectedItem.toString();
+            SpreadSheetCreator sc=new SpreadSheetCreator(results,this.COLLEGE_NAME,examName);
+            sc.createXLS("results.xls",true);
+            System.out.println("Done!!!");
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame1.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if(fw!=null)
+                    fw.close();
+            } catch (IOException ex) {
+                Logger.getLogger(MainFrame1.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
    }
    
    public List<String> prepareListofRegs(){
@@ -232,7 +282,7 @@ public class MainFrame1 extends javax.swing.JFrame {
         aboutMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Results");
+        setTitle("Result Analysis");
 
         buttonGroup1.add(singleStudentRadio);
         singleStudentRadio.setSelected(true);
@@ -293,7 +343,6 @@ public class MainFrame1 extends javax.swing.JFrame {
             }
         });
         fileMenu.add(exitMenuItem);
-        exitMenuItem.getAccessibleContext().setAccessibleName("Exit");
 
         mainMenuBar.add(fileMenu);
 

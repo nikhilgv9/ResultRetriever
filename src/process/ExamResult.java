@@ -9,12 +9,14 @@ package process;
  * @author Nikhil
  */
 public class ExamResult {
+    
     String subCode;
     String subName;
     String credit;
     String grade;
     String date;
     String type;
+    
     
     ExamResult(){
         

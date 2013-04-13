@@ -50,10 +50,9 @@ public class PdfProcessor {
         
         PdfProcessor obj=new PdfProcessor(MainFrame1.TEMP_PDF_FILE_NAME);
         obj.extractText();
-        //System.out.println(obj.pdfText);       
+        System.out.println(obj.pdfText);       
         StudentResult res=obj.parseResult();
         res.quickPrint();
- 
     }
     
     public StudentResult getStudentResult(){
@@ -84,6 +83,7 @@ public class PdfProcessor {
     
     public StudentResult parseResult(){
         boolean subjectSection=false;
+        boolean inSubjectSection=false;
         StudentResult result=new StudentResult();
         String[] lines=pdfText.split("\\n");
         for(int i=0;i<lines.length;i++){
@@ -95,8 +95,26 @@ public class PdfProcessor {
                     continue;
                 }
                 //System.out.println(lines[i]);
-                result.addSubjectResult(lines[i], lines[i+1], lines[i+2], lines[i+3], lines[i+4], lines[i+5]);
-                i=i+5;
+                String code=lines[i];
+                i++;
+                String subject=lines[i];
+                i++;
+                try{
+                    Integer.parseInt(lines[i].trim());
+                }catch(NumberFormatException e){
+                    //Subject is spanned over two lines
+                    subject=subject+" "+lines[i];
+                    i++;
+                }
+                String credit=lines[i];
+                i++;
+                String grade=lines[i];
+                i++;
+                String date=lines[i];
+                i++;
+                String reg=lines[i];
+                
+                result.addSubjectResult(code, subject, credit, grade, date, reg);
             }
             else{
                 
